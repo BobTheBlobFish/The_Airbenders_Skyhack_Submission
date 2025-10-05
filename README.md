@@ -1,7 +1,10 @@
 
-# Project Title
+# SkyHack 3.0 Submission by Team The Airbenders
 
-A brief description of what this project does and who it's for
+Submission for SkyHack 3.0 2025 conducted by United Airlines by team: The Airbenders 
+Members include:
+Akshit Sahu (2K22/EC/027)
+Atharva Jakhetiya (2K22/EC/063)
 
 
 ## Problem Statement & Objective
@@ -130,7 +133,7 @@ This updates the file top_difficult_flights.csv, flight_difficulty_scores.csv an
 
 4. For Question C: Post-Analysis & Operational Insights:
 ```bash
-cd ..
+  cd ..
   cd Question C
   python operational_insights_analyzer.py
 ```
