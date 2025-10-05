@@ -37,7 +37,7 @@ sns.set_palette("husl")
 class OperationalInsightsAnalyzer:
     """Class to perform post-analysis and generate operational insights"""
     
-    def __init__(self, data_path="../Flight Difficulty Score/"):
+    def __init__(self, data_path="../Question B/"):
         """Initialize with data path"""
         self.data_path = data_path
         self.flight_data = None
@@ -49,12 +49,55 @@ class OperationalInsightsAnalyzer:
         """Load flight difficulty data"""
         print("Loading Flight Difficulty Score data...")
         
+        # Debug: Print current working directory and data path
+        import os
+        print(f"Current working directory: {os.getcwd()}")
+        print(f"Data path: {self.data_path}")
+        
         # Load main flight difficulty scores
-        self.flight_data = pd.read_csv(f"{self.data_path}flight_difficulty_scores.csv")
+        flight_scores_path = f"{self.data_path}flight_difficulty_scores.csv"
+        print(f"Loading from: {flight_scores_path}")
+        print(f"File exists: {os.path.exists(flight_scores_path)}")
+        
+        if not os.path.exists(flight_scores_path):
+            print("ERROR: File not found! Trying alternative paths...")
+            # Try alternative paths
+            alt_paths = [
+                "Question B/flight_difficulty_scores.csv",
+                "../Question B/flight_difficulty_scores.csv",
+                "./Question B/flight_difficulty_scores.csv"
+            ]
+            for alt_path in alt_paths:
+                if os.path.exists(alt_path):
+                    print(f"Found file at: {alt_path}")
+                    flight_scores_path = alt_path
+                    break
+            else:
+                raise FileNotFoundError(f"Could not find flight_difficulty_scores.csv in any expected location")
+        
+        self.flight_data = pd.read_csv(flight_scores_path)
         print(f" Loaded {len(self.flight_data):,} flight records")
         
         # Load daily summary
-        self.daily_summary = pd.read_csv(f"{self.data_path}daily_difficulty_summary.csv")
+        daily_summary_path = f"{self.data_path}daily_difficulty_summary.csv"
+        print(f"Loading from: {daily_summary_path}")
+        
+        if not os.path.exists(daily_summary_path):
+            # Try alternative paths
+            alt_paths = [
+                "Question B/daily_difficulty_summary.csv",
+                "../Question B/daily_difficulty_summary.csv",
+                "./Question B/daily_difficulty_summary.csv"
+            ]
+            for alt_path in alt_paths:
+                if os.path.exists(alt_path):
+                    print(f"Found file at: {alt_path}")
+                    daily_summary_path = alt_path
+                    break
+            else:
+                raise FileNotFoundError(f"Could not find daily_difficulty_summary.csv in any expected location")
+        
+        self.daily_summary = pd.read_csv(daily_summary_path)
         print(f" Loaded {len(self.daily_summary):,} daily summary records")
         
         # Convert date columns
@@ -152,7 +195,6 @@ class OperationalInsightsAnalyzer:
         
         # Chart 1: Most Difficult Destinations (Question 1)
         fig, axes = plt.subplots(2, 2, figsize=(20, 16))
-        fig.suptitle('Post-Analysis: Destination Difficulty & Operational Insights', fontsize=18, fontweight='bold', y=0.95)
         
         # Question 1: Which destinations consistently show more difficulty?
         colors = plt.cm.RdYlBu_r(np.linspace(0, 1, len(top_destinations)))
@@ -242,7 +284,7 @@ class OperationalInsightsAnalyzer:
                    linewidths=0.5, linecolor='white',
                    annot_kws={'fontsize': 10, 'fontweight': 'bold'})
         
-        plt.title('Post-Analysis: Destination Characteristics Heatmap\n(Top 12 Difficult Destinations)', 
+        plt.title('Destination Characteristics Heatmap\n(Top 12 Difficult Destinations)', 
                  fontsize=16, fontweight='bold', pad=20)
         plt.xlabel('Destinations', fontsize=12, fontweight='bold')
         plt.ylabel('Characteristics', fontsize=12, fontweight='bold')
@@ -264,7 +306,6 @@ class OperationalInsightsAnalyzer:
         
         # Chart: Driver Impact Analysis (Question 2)
         fig, axes = plt.subplots(2, 2, figsize=(20, 16))
-        fig.suptitle('Post-Analysis: Difficulty Drivers & Operational Insights', fontsize=18, fontweight='bold', y=0.95)
         
         # Question 2: What are the common drivers for difficult flights?
         colors = plt.cm.RdYlBu_r(np.linspace(0, 1, len(drivers)))
@@ -348,6 +389,70 @@ class OperationalInsightsAnalyzer:
         
         plt.tight_layout()
         plt.savefig('difficulty_driver_analysis.png', dpi=300, bbox_inches='tight', facecolor='white')
+        plt.close()
+        
+    def create_difficulty_distribution_chart(self):
+        """Create a clean difficulty distribution chart optimized for PowerPoint"""
+        print("\nCreating difficulty distribution chart...")
+        
+        # Create a single, clean chart optimized for PPT
+        fig, ax = plt.subplots(1, 1, figsize=(10, 6))
+        
+        # Create histogram of difficulty scores
+        n, bins, patches = ax.hist(self.flight_data['difficulty_score'], bins=30, alpha=0.8, 
+                                  edgecolor='white', linewidth=1, color='#2E86AB')
+        
+        # Add vertical lines for classification thresholds
+        # Calculate percentiles for classification
+        difficult_threshold = self.flight_data['difficulty_score'].quantile(0.67)  # Top 33%
+        easy_threshold = self.flight_data['difficulty_score'].quantile(0.33)      # Bottom 33%
+        
+        ax.axvline(difficult_threshold, color='#E53E3E', linestyle='--', linewidth=3, 
+                  label=f'Difficult Threshold ({difficult_threshold:.1f})')
+        ax.axvline(easy_threshold, color='#68D391', linestyle='--', linewidth=3, 
+                  label=f'Easy Threshold ({easy_threshold:.1f})')
+        
+        # Add mean line
+        mean_score = self.flight_data['difficulty_score'].mean()
+        ax.axvline(mean_score, color='#FFA726', linestyle='-', linewidth=3, 
+                  label=f'Mean Score ({mean_score:.1f})')
+        
+        # Styling
+        ax.set_xlabel('Flight Difficulty Score', fontsize=14, fontweight='bold')
+        ax.set_ylabel('Number of Flights', fontsize=14, fontweight='bold')
+        ax.set_title('Flight Difficulty Score Distribution\n(8,099 Flights Analyzed)', 
+                    fontsize=16, fontweight='bold', pad=20)
+        
+        # Add statistics text box
+        stats_text = f"""Statistics:
+• Mean: {mean_score:.1f}
+• Median: {self.flight_data['difficulty_score'].median():.1f}
+• Range: {self.flight_data['difficulty_score'].min():.1f} - {self.flight_data['difficulty_score'].max():.1f}
+• Std Dev: {self.flight_data['difficulty_score'].std():.1f}"""
+        
+        ax.text(0.02, 0.98, stats_text, transform=ax.transAxes, fontsize=11,
+                verticalalignment='top', bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
+        
+        # Add classification distribution
+        classification_counts = self.flight_data['difficulty_classification'].value_counts()
+        classification_text = f"""Classification:
+• Difficult: {classification_counts.get('Difficult', 0):,} ({classification_counts.get('Difficult', 0)/len(self.flight_data)*100:.1f}%)
+• Medium: {classification_counts.get('Medium', 0):,} ({classification_counts.get('Medium', 0)/len(self.flight_data)*100:.1f}%)
+• Easy: {classification_counts.get('Easy', 0):,} ({classification_counts.get('Easy', 0)/len(self.flight_data)*100:.1f}%)"""
+        
+        ax.text(0.98, 0.98, classification_text, transform=ax.transAxes, fontsize=11,
+                verticalalignment='top', horizontalalignment='right',
+                bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
+        
+        # Legend and grid
+        ax.legend(fontsize=12, loc='upper left')
+        ax.grid(True, alpha=0.3)
+        
+        # Set axis limits for better visibility
+        ax.set_xlim(0, self.flight_data['difficulty_score'].max() * 1.05)
+        
+        plt.tight_layout()
+        plt.savefig('difficulty_distribution.png', dpi=300, bbox_inches='tight', facecolor='white')
         plt.close()
         
     def generate_operational_recommendations(self, sorted_drivers):
@@ -586,6 +691,7 @@ class OperationalInsightsAnalyzer:
         # Create charts
         self.create_destination_charts()
         self.create_driver_charts(sorted_drivers)
+        self.create_difficulty_distribution_chart()
         
         # Generate recommendations
         recommendations = self.generate_operational_recommendations(sorted_drivers)
@@ -598,6 +704,7 @@ class OperationalInsightsAnalyzer:
         print("• destination_difficulty_analysis.png")
         print("• destination_characteristics_heatmap.png")
         print("• difficulty_driver_analysis.png")
+        print("• difficulty_distribution.png")
         print("• operational_insights_report.txt")
         
         return {
