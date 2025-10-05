@@ -127,20 +127,15 @@ class FlightEDA:
         late_percentage = (len(late_flights) / len(self.flights)) * 100
         
         # Flights departing early
-        early_flights = self.flights[self.flights['departure_delay_minutes'] < -15]
+        early_flights = self.flights[self.flights['departure_delay_minutes'] <= 15]
         early_percentage = (len(early_flights) / len(self.flights)) * 100
         
         print(f" DELAY STATISTICS:")
         print(f"    Average departure delay: {avg_delay:.1f} minutes")
         print(f"    Median departure delay: {median_delay:.1f} minutes")
         print(f"    Flights departing late (>15 min): {late_percentage:.1f}%")
-        print(f"    Flights departing early (>15 min): {early_percentage:.1f}%")
+        print(f"    Flights departing early (<=15 min): {early_percentage:.1f}%")
         
-        # Additional analysis
-        print(f"\n DELAY DISTRIBUTION:")
-        print(f"    Standard deviation: {self.flights['departure_delay_minutes'].std():.1f} minutes")
-        print(f"    95th percentile: {self.flights['departure_delay_minutes'].quantile(0.95):.1f} minutes")
-        print(f"    5th percentile: {self.flights['departure_delay_minutes'].quantile(0.05):.1f} minutes")
         
         return {
             'avg_delay': avg_delay,
@@ -258,6 +253,11 @@ class FlightEDA:
         flight_passengers['load_factor'] = (
             flight_passengers['total_pax'] / flight_passengers['total_seats']
         )
+        
+        # Convert string columns to numeric for calculations
+        flight_passengers['is_child'] = pd.to_numeric(flight_passengers['is_child'], errors='coerce').fillna(0)
+        flight_passengers['basic_economy_ind'] = pd.to_numeric(flight_passengers['basic_economy_ind'], errors='coerce').fillna(0)
+        flight_passengers['is_stroller_user'] = pd.to_numeric(flight_passengers['is_stroller_user'], errors='coerce').fillna(0)
         
         # Calculate passenger complexity metrics
         flight_passengers['children_ratio'] = (
