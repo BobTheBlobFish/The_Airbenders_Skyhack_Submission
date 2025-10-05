@@ -8,8 +8,6 @@ This script implements a systematic daily-level scoring approach that:
 2. Ranks flights within each day by difficulty
 3. Classifies flights into Difficult/Medium/Easy categories
 
-Author: AI Assistant
-Date: 2025
 """
 
 import pandas as pd

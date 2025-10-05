@@ -12,16 +12,8 @@ Date: 2025
 
 import pandas as pd
 import numpy as np
-import matplotlib
-matplotlib.use('Agg')  # Use non-interactive backend
-import matplotlib.pyplot as plt
-import seaborn as sns
 import warnings
 warnings.filterwarnings('ignore')
-
-# Set plotting style
-plt.style.use('seaborn-v0_8')
-sns.set_palette("husl")
 
 class FlightEDA:
     """Class to handle all EDA operations for flight difficulty analysis"""
@@ -120,287 +112,6 @@ class FlightEDA:
         
         print(" Data preprocessing completed!")
         
-    def create_delay_visualization(self, delay_stats):
-        """Create visualization for delay analysis"""
-        # Set a beautiful color palette
-        plt.style.use('seaborn-v0_8')
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 7))
-        fig.suptitle('Question 1: Flight Delay Analysis', fontsize=16, fontweight='bold', y=0.98)
-
-        # Delay distribution histogram with gradient colors
-        n, bins, patches = ax1.hist(self.flights['departure_delay_minutes'], bins=50, alpha=0.8, edgecolor='white', linewidth=1)
-        
-        # Create gradient colors for histogram
-        colors = plt.cm.viridis(np.linspace(0, 1, len(patches)))
-        for patch, color in zip(patches, colors):
-            patch.set_facecolor(color)
-        
-        ax1.axvline(delay_stats['avg_delay'], color='#FF6B6B', linestyle='--', linewidth=3, label=f'Average: {delay_stats["avg_delay"]:.1f} min')
-        ax1.axvline(15, color='#FFA726', linestyle='--', linewidth=3, label='Late threshold: 15 min')
-        ax1.set_xlabel('Departure Delay (minutes)', fontsize=12, fontweight='bold')
-        ax1.set_ylabel('Number of Flights', fontsize=12, fontweight='bold')
-        ax1.set_title('Distribution of Departure Delays', fontsize=14, fontweight='bold')
-        ax1.set_xlim(0, 350)  # Limit x-axis to 350 minutes
-        ax1.legend(fontsize=10)
-        ax1.grid(True, alpha=0.3)
-        
-        # Enhanced pie chart with beautiful colors (2D)
-        labels = ['On-time/Early (≤15 min)', 'Late (>15 min)']
-        sizes = [delay_stats['early_percentage'], delay_stats['late_percentage']]
-        colors = ['#4CAF50', '#F44336']  # Green and Red
-
-        wedges, texts, autotexts = ax2.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%', 
-                                          startangle=90)
-        
-        # Enhance text appearance
-        for text in texts:
-            text.set_fontsize(11)
-            text.set_fontweight('bold')
-        for autotext in autotexts:
-            autotext.set_color('white')
-            autotext.set_fontsize(12)
-            autotext.set_fontweight('bold')
-        
-        ax2.set_title('Flight Punctuality Distribution', fontsize=14, fontweight='bold')
-
-        plt.tight_layout()
-        plt.savefig('question1.png', dpi=300, bbox_inches='tight', facecolor='white')
-        plt.close()  # Close the figure instead of showing it
-        
-    def create_ground_time_visualization(self, ground_time_stats):
-        """Create visualization for ground time analysis"""
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 7))
-        fig.suptitle('Question 2: Ground Time Analysis', fontsize=16, fontweight='bold', y=0.98)
-        
-        # Ground time ratio distribution with beautiful colors
-        n, bins, patches = ax1.hist(self.flights['ground_time_ratio'], bins=50, alpha=0.8, edgecolor='white', linewidth=1)
-        
-        # Create gradient colors for histogram
-        colors = plt.cm.plasma(np.linspace(0, 1, len(patches)))
-        for patch, color in zip(patches, colors):
-            patch.set_facecolor(color)
-        
-        ax1.axvline(1.0, color='#E53E3E', linestyle='--', linewidth=3, label='Minimum turn time')
-        ax1.axvline(1.2, color='#F6AD55', linestyle='--', linewidth=3, label='Tight threshold (20% buffer)')
-        ax1.set_xlabel('Ground Time Ratio', fontsize=12, fontweight='bold')
-        ax1.set_ylabel('Number of Flights', fontsize=12, fontweight='bold')
-        ax1.set_title('Distribution of Ground Time Ratios', fontsize=14, fontweight='bold')
-        ax1.set_xlim(0, 100)  # Limit x-axis to 100
-        ax1.legend(fontsize=10)
-        ax1.grid(True, alpha=0.3)
-        
-        # Enhanced pie chart for ground time categories (2D)
-        categories = ['Below Minimum', 'Tight (<20% buffer)', 'Adequate (≥20% buffer)']
-        below_min = ground_time_stats['below_minimum_percentage']
-        tight = ground_time_stats['tight_ground_time_percentage'] - below_min
-        adequate = 100 - ground_time_stats['tight_ground_time_percentage']
-        sizes = [below_min, tight, adequate]
-        colors = ['#E53E3E', '#F6AD55', '#68D391']  # Red, Orange, Green
-        
-        wedges, texts, autotexts = ax2.pie(sizes, labels=categories, colors=colors, autopct='%1.1f%%', 
-                                          startangle=90)
-        
-        # Enhance text appearance
-        for text in texts:
-            text.set_fontsize(11)
-            text.set_fontweight('bold')
-        for autotext in autotexts:
-            autotext.set_color('white')
-            autotext.set_fontsize(12)
-            autotext.set_fontweight('bold')
-        
-        ax2.set_title('Ground Time Buffer Categories', fontsize=14, fontweight='bold')
-        
-        plt.tight_layout()
-        plt.savefig('question2.png', dpi=300, bbox_inches='tight', facecolor='white')
-        plt.close()  # Close the figure instead of showing it
-        
-    def create_baggage_visualization(self, baggage_stats):
-        """Create visualization for baggage analysis"""
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 7))
-        fig.suptitle('Question 3: Baggage Analysis', fontsize=16, fontweight='bold', y=0.98)
-        
-        # Bag type distribution with beautiful colors
-        bag_types = ['Origin (Checked)', 'Transfer', 'Hot Transfer']
-        bag_counts = [
-            len(self.bags[self.bags['bag_type'] == 'Origin']),
-            len(self.bags[self.bags['bag_type'] == 'Transfer']),
-            len(self.bags[self.bags['bag_type'] == 'Hot Transfer'])
-        ]
-        
-        colors = ['#FF6B6B', '#4ECDC4', '#45B7D1']  # Red, Teal, Blue
-        
-        wedges, texts, autotexts = ax1.pie(bag_counts, labels=bag_types, colors=colors, autopct='%1.1f%%', 
-                                          startangle=90)
-        
-        # Enhance text appearance
-        for text in texts:
-            text.set_fontsize(11)
-            text.set_fontweight('bold')
-        for autotext in autotexts:
-            autotext.set_color('white')
-            autotext.set_fontsize(12)
-            autotext.set_fontweight('bold')
-        
-        ax1.set_title('Bag Type Distribution', fontsize=14, fontweight='bold')
-        
-        # Transfer ratio distribution with gradient colors
-        bag_counts_df = self.bags.groupby([
-            'company_id', 'flight_number', 'scheduled_departure_date_local', 'bag_type'
-        ]).size().unstack(fill_value=0).reset_index()
-        
-        bag_counts_df['total_bags'] = bag_counts_df.get('Origin', 0) + bag_counts_df.get('Transfer', 0) + bag_counts_df.get('Hot Transfer', 0)
-        bag_counts_df['transfer_ratio'] = (bag_counts_df.get('Transfer', 0) + bag_counts_df.get('Hot Transfer', 0)) / bag_counts_df['total_bags'].replace(0, np.nan)
-        
-        # Sample for visualization with outlier filtering
-        transfer_ratios = bag_counts_df[bag_counts_df['total_bags'] > 0]['transfer_ratio'].dropna()
-        
-        # Filter out extreme outliers (keep data within 5th to 95th percentile)
-        q5 = transfer_ratios.quantile(0.05)
-        q95 = transfer_ratios.quantile(0.95)
-        filtered_data = transfer_ratios[(transfer_ratios >= q5) & (transfer_ratios <= q95)]
-        
-        # Sample for visualization (first 1000 flights with bags)
-        sample_data = filtered_data.head(1000)
-        
-        n, bins, patches = ax2.hist(sample_data, bins=30, alpha=0.8, edgecolor='white', linewidth=1)
-        
-        # Create gradient colors for histogram
-        colors = plt.cm.coolwarm(np.linspace(0, 1, len(patches)))
-        for patch, color in zip(patches, colors):
-            patch.set_facecolor(color)
-        
-        ax2.axvline(baggage_stats['avg_transfer_ratio'], color='#FF6B6B', linestyle='--', linewidth=3, 
-                   label=f'Average: {baggage_stats["avg_transfer_ratio"]:.3f}')
-        ax2.set_xlabel('Transfer Bag Ratio', fontsize=12, fontweight='bold')
-        ax2.set_ylabel('Number of Flights', fontsize=12, fontweight='bold')
-        ax2.set_title('Distribution of Transfer Bag Ratios (Filtered Sample)', fontsize=14, fontweight='bold')
-        ax2.legend(fontsize=10)
-        ax2.grid(True, alpha=0.3)
-        
-        plt.tight_layout()
-        plt.savefig('question3.png', dpi=300, bbox_inches='tight', facecolor='white')
-        plt.close()  # Close the figure instead of showing it
-        
-    def create_passenger_load_visualization(self, passenger_stats):
-        """Create visualization for passenger load analysis"""
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 7))
-        fig.suptitle('Question 4: Passenger Load Analysis', fontsize=16, fontweight='bold', y=0.98)
-        
-        # Aggregate PNR data by flight
-        pnr_summary = self.pnr_flight.groupby([
-            'company_id', 'flight_number', 'scheduled_departure_date_local'
-        ]).agg({
-            'total_pax': 'sum'
-        }).reset_index()
-        
-        # Merge with flight data
-        flight_passengers = self.flights.merge(
-            pnr_summary,
-            on=['company_id', 'flight_number', 'scheduled_departure_date_local'],
-            how='left'
-        )
-        
-        # Calculate load factor
-        flight_passengers['load_factor'] = (
-            flight_passengers['total_pax'] / flight_passengers['total_seats']
-        )
-        
-        # Load factor distribution with beautiful colors
-        n, bins, patches = ax1.hist(flight_passengers['load_factor'].dropna(), bins=30, alpha=0.8, edgecolor='white', linewidth=1)
-        
-        # Create gradient colors for histogram
-        colors = plt.cm.RdYlGn(np.linspace(0, 1, len(patches)))
-        for patch, color in zip(patches, colors):
-            patch.set_facecolor(color)
-        
-        ax1.axvline(passenger_stats['avg_load_factor'], color='#FF6B6B', linestyle='--', linewidth=3, 
-                   label=f'Average: {passenger_stats["avg_load_factor"]:.3f}')
-        ax1.axvline(0.8, color='#FFA726', linestyle='--', linewidth=3, label='High load threshold: 80%')
-        ax1.set_xlabel('Load Factor', fontsize=12, fontweight='bold')
-        ax1.set_ylabel('Number of Flights', fontsize=12, fontweight='bold')
-        ax1.set_title('Distribution of Load Factors', fontsize=14, fontweight='bold')
-        ax1.legend(fontsize=10)
-        ax1.grid(True, alpha=0.3)
-        
-        # Load factor vs delay scatter plot with beautiful colors
-        sample_data = flight_passengers[flight_passengers['load_factor'].notna()].sample(1000)
-        scatter = ax2.scatter(sample_data['load_factor'], sample_data['departure_delay_minutes'], 
-                           c=sample_data['departure_delay_minutes'], cmap='RdYlBu_r', alpha=0.6, s=30)
-        ax2.set_xlabel('Load Factor', fontsize=12, fontweight='bold')
-        ax2.set_ylabel('Departure Delay (minutes)', fontsize=12, fontweight='bold')
-        ax2.set_title(f'Load Factor vs Delay (Correlation: {passenger_stats["load_delay_correlation"]:.3f})', fontsize=14, fontweight='bold')
-        ax2.grid(True, alpha=0.3)
-        
-        # Add colorbar
-        cbar = plt.colorbar(scatter, ax=ax2)
-        cbar.set_label('Delay (minutes)', fontsize=10, fontweight='bold')
-        
-        plt.tight_layout()
-        plt.savefig('question4.png', dpi=300, bbox_inches='tight', facecolor='white')
-        plt.close()  # Close the figure instead of showing it
-        
-    def create_special_services_visualization(self, special_services_stats):
-        """Create visualization for special services analysis"""
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 7))
-        fig.suptitle('Question 5: Special Services Analysis', fontsize=16, fontweight='bold', y=0.98)
-        
-        # Count special services per flight
-        special_services = self.pnr_remarks.groupby([
-            'flight_number'
-        ]).size().reset_index(name='special_service_count')
-        
-        # Merge with flight data
-        flight_services = self.flights.merge(
-            special_services,
-            on='flight_number',
-            how='left'
-        )
-        flight_services['special_service_count'] = flight_services['special_service_count'].fillna(0)
-        
-        # Special service count distribution with beautiful colors
-        n, bins, patches = ax1.hist(flight_services['special_service_count'], bins=20, alpha=0.8, edgecolor='white', linewidth=1)
-        
-        # Create gradient colors for histogram
-        colors = plt.cm.viridis(np.linspace(0, 1, len(patches)))
-        for patch, color in zip(patches, colors):
-            patch.set_facecolor(color)
-        
-        ax1.axvline(special_services_stats['avg_services_per_flight'], color='#FF6B6B', linestyle='--', linewidth=3, 
-                   label=f'Average: {special_services_stats["avg_services_per_flight"]:.2f}')
-        ax1.set_xlabel('Special Service Requests per Flight', fontsize=12, fontweight='bold')
-        ax1.set_ylabel('Number of Flights', fontsize=12, fontweight='bold')
-        ax1.set_title('Distribution of Special Service Requests', fontsize=14, fontweight='bold')
-        ax1.legend(fontsize=10)
-        ax1.grid(True, alpha=0.3)
-        
-        # Top special service types with beautiful colors
-        service_types = self.pnr_remarks['special_service_request'].value_counts().head(8)
-        colors = list(plt.cm.Set3(np.linspace(0, 1, len(service_types))))
-        
-        # Change unaccompanied minor color to red
-        service_list = list(service_types.index)
-        if 'Unaccompanied Minor' in service_list:
-            unaccompanied_index = service_list.index('Unaccompanied Minor')
-            colors[unaccompanied_index] = '#E53E3E'  # Red color
-        
-        bars = ax2.barh(range(len(service_types)), service_types.values, color=colors, alpha=0.8)
-        ax2.set_yticks(range(len(service_types)))
-        ax2.set_yticklabels([label[:30] + '...' if len(label) > 30 else label for label in service_types.index], fontsize=10)
-        ax2.set_xlabel('Number of Requests', fontsize=12, fontweight='bold')
-        ax2.set_title('Top Special Service Request Types', fontsize=14, fontweight='bold')
-        ax2.grid(True, alpha=0.3)
-        
-        # Add value labels on bars
-        for i, bar in enumerate(bars):
-            width = bar.get_width()
-            ax2.text(width + width*0.01, bar.get_y() + bar.get_height()/2, 
-                    f'{int(width):,}', ha='left', va='center', fontsize=9, fontweight='bold')
-        
-        plt.tight_layout()
-        plt.savefig('question5.png', dpi=300, bbox_inches='tight', facecolor='white')
-        plt.close()  # Close the figure instead of showing it
-        
     def question_1_delay_analysis(self):
         """Question 1: Average delay and percentage of late departures"""
         print("\n" + "="*60)
@@ -425,14 +136,13 @@ class FlightEDA:
         print(f"    Flights departing late (>15 min): {late_percentage:.1f}%")
         print(f"    Flights departing early (<=15 min): {early_percentage:.1f}%")
         
-        # Create visualization
+        # Prepare results
         delay_stats = {
             'avg_delay': avg_delay,
             'median_delay': median_delay,
             'late_percentage': late_percentage,
             'early_percentage': early_percentage
         }
-        self.create_delay_visualization(delay_stats)
         
         return delay_stats
     
@@ -465,13 +175,12 @@ class FlightEDA:
         print(f"    25th percentile ratio: {self.flights['ground_time_ratio'].quantile(0.25):.2f}")
         print(f"    75th percentile ratio: {self.flights['ground_time_ratio'].quantile(0.75):.2f}")
         
-        # Create visualization
+        # Prepare results
         ground_time_stats = {
             'tight_ground_time_percentage': tight_percentage,
             'below_minimum_percentage': below_minimum_percentage,
             'avg_buffer': avg_buffer
         }
-        self.create_ground_time_visualization(ground_time_stats)
         
         return ground_time_stats
     
@@ -512,16 +221,15 @@ class FlightEDA:
         print(f"\n BAGGAGE DISTRIBUTION:")
         print(f"    Total bags in dataset: {len(self.bags):,}")
         print(f"    Transfer bags: {len(self.bags[self.bags['bag_type'] == 'Transfer']):,}")
-        print(f"    Checked bags: {len(self.bags[self.bags['bag_type'] == 'Checked']):,}")
+        print(f"    Checked bags: {len(self.bags[self.bags['bag_type'] == 'Origin']):,}")
         print(f"    Flights with bag data: {len(flight_bags[flight_bags['total_bags'] > 0]):,}")
         
-        # Create visualization
+        # Prepare results
         baggage_stats = {
             'avg_transfer_ratio': avg_transfer_ratio,
             'avg_checked_ratio': avg_checked_ratio,
             'avg_bags_per_flight': avg_bags_per_flight
         }
-        self.create_baggage_visualization(baggage_stats)
         
         return baggage_stats
     
@@ -593,13 +301,12 @@ class FlightEDA:
         print(f"    Average stroller ratio: {flight_passengers['stroller_ratio'].mean():.3f}")
         print(f"    Total passengers in dataset: {flight_passengers['total_pax'].sum():,}")
         
-        # Create visualization
+        # Prepare results
         passenger_stats = {
             'avg_load_factor': avg_load_factor,
             'high_load_percentage': high_load_percentage,
             'load_delay_correlation': load_delay_corr
         }
-        self.create_passenger_load_visualization(passenger_stats)
         
         return passenger_stats
     
@@ -671,13 +378,12 @@ class FlightEDA:
         for service, count in service_types.head(5).items():
             print(f"    {service}: {count:,} requests")
         
-        # Create visualization
+        # Prepare results
         special_services_stats = {
             'high_service_percentage': high_service_percentage,
             'avg_services_per_flight': flight_services['special_service_count'].mean(),
             'service_delay_analysis': service_delays
         }
-        self.create_special_services_visualization(special_services_stats)
         
         return special_services_stats
     
@@ -689,7 +395,6 @@ class FlightEDA:
             f.write("="*80 + "\n")
             f.write("UNITED AIRLINES FLIGHT DIFFICULTY SCORE - EDA RESULTS\n")
             f.write("="*80 + "\n")
-            f.write(f"Analysis Date: {pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
             f.write(f"Team: The Airbenders\n")
             f.write(f"Members: Akshit Sahu (2K22/EC/027) & Atharva Jakhetiya (2K22/EC/063)\n\n")
             
@@ -829,11 +534,6 @@ class FlightEDA:
         
         print(f"\n EDA Analysis completed successfully!")
         print(f"Generated files:")
-        print(f"question1.png (Delay Analysis)")
-        print(f"question2.png (Ground Time Analysis)")
-        print(f"question3.png (Baggage Analysis)")
-        print(f"question4.png (Passenger Load Analysis)")
-        print(f"question5.png (Special Services Analysis)")
         print(f"eda_results.txt")
         
         return results

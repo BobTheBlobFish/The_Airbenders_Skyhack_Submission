@@ -347,18 +347,21 @@ class OperationalInsightsAnalyzer:
         
         if valid_impacts:
             colors_pie = plt.cm.Set3(np.linspace(0, 1, len(valid_impacts)))
-            wedges, texts, autotexts = axes[1,0].pie(valid_impacts, labels=valid_drivers, colors=colors_pie, 
-                                                   autopct='%1.1f%%', startangle=90)
+            
+            # Create pie chart without labels and percentages on the chart
+            wedges, texts, autotexts = axes[1,0].pie(valid_impacts, labels=None, colors=colors_pie, 
+                                                   autopct='', startangle=90)
             axes[1,0].set_title('Q3: Priority Drivers for Action (by Impact)', fontsize=14, fontweight='bold')
             
-            # Enhance text appearance
-            for text in texts:
-                text.set_fontsize(9)
-                text.set_fontweight('bold')
-            for autotext in autotexts:
-                autotext.set_color('white')
-                autotext.set_fontsize(10)
-                autotext.set_fontweight('bold')
+            # Create custom legend with driver names and percentages
+            legend_labels = []
+            for i, (driver, impact) in enumerate(zip(valid_drivers, valid_impacts)):
+                percentage = (impact / sum(valid_impacts)) * 100
+                legend_labels.append(f'{driver}: {percentage:.1f}%')
+            
+            # Add legend outside the pie chart
+            axes[1,0].legend(wedges, legend_labels, loc='center left', bbox_to_anchor=(1, 0, 0.5, 1), 
+                           fontsize=10, title='Drivers & Impact %', title_fontsize=11)
         else:
             axes[1,0].text(0.5, 0.5, 'No valid driver data available', 
                           ha='center', va='center', transform=axes[1,0].transAxes, fontsize=12)
