@@ -228,11 +228,9 @@ class FlightDifficultyScorer:
         )
         self.flight_features['special_service_count'] = self.flight_features['special_service_count'].fillna(0)
         
-        # Calculate special service complexity
-        self.flight_features['special_service_complexity'] = (
-            self.flight_features['special_service_count'] / self.flight_features['total_pax'].replace(0, np.nan)
-        )
-        self.flight_features['special_service_complexity'] = self.flight_features['special_service_complexity'].fillna(0)
+        # Calculate special service complexity (absolute count, not per-passenger ratio)
+        # Special services require the same operational effort regardless of passenger count
+        self.flight_features['special_service_complexity'] = self.flight_features['special_service_count']
         
         # 5. BAGGAGE COMPLEXITY FEATURES
         print(" Calculating baggage complexity features...")
@@ -242,9 +240,9 @@ class FlightDifficultyScorer:
             'company_id', 'flight_number', 'scheduled_departure_date_local', 'bag_type'
         ]).size().unstack(fill_value=0).reset_index()
         
-        # Calculate ratios
-        bag_counts['total_bags'] = bag_counts.get('Checked', 0) + bag_counts.get('Transfer', 0)
-        bag_counts['transfer_ratio'] = bag_counts.get('Transfer', 0) / bag_counts['total_bags'].replace(0, np.nan)
+        # Calculate ratios (using 'Origin' instead of 'Checked' as per data dictionary)
+        bag_counts['total_bags'] = bag_counts.get('Origin', 0) + bag_counts.get('Transfer', 0) + bag_counts.get('Hot Transfer', 0)
+        bag_counts['transfer_ratio'] = (bag_counts.get('Transfer', 0) + bag_counts.get('Hot Transfer', 0)) / bag_counts['total_bags'].replace(0, np.nan)
         bag_counts['transfer_ratio'] = bag_counts['transfer_ratio'].fillna(0)
         
         # Merge with flight data
@@ -258,14 +256,13 @@ class FlightDifficultyScorer:
         self.flight_features['total_bags'] = self.flight_features['total_bags'].fillna(0)
         self.flight_features['transfer_ratio'] = self.flight_features['transfer_ratio'].fillna(0)
         
-        # Calculate baggage complexity
-        self.flight_features['baggage_complexity'] = (
-            self.flight_features['total_bags'] / self.flight_features['total_pax'].replace(0, np.nan)
-        )
-        self.flight_features['baggage_complexity'] = self.flight_features['baggage_complexity'].fillna(0)
+        # Calculate baggage complexity (absolute count, not per-passenger ratio)
+        # Baggage handling complexity is about total volume, not per-passenger ratios
+        self.flight_features['baggage_complexity'] = self.flight_features['total_bags']
         
-        # Transfer bags are more complex to handle
-        self.flight_features['transfer_bag_complexity'] = self.flight_features['transfer_ratio'] * 2
+        # Transfer bags are more complex to handle - use absolute count with complexity multiplier
+        transfer_bags = self.flight_features.get('Transfer', 0).fillna(0) + self.flight_features.get('Hot Transfer', 0).fillna(0)
+        self.flight_features['transfer_bag_complexity'] = transfer_bags * 2  # Transfer bags are 2x more complex
         
         # 6. HISTORICAL PERFORMANCE FEATURES
         print(" Calculating historical performance features...")

@@ -144,77 +144,116 @@ class OperationalInsightsAnalyzer:
         return sorted_drivers
         
     def create_destination_charts(self):
-        """Create charts for destination analysis"""
+        """Create charts for destination analysis - focused on core questions"""
         print("\nCreating destination analysis charts...")
         
-        # Top 20 most difficult destinations
-        top_destinations = self.destination_analysis.head(20)
+        # Top 15 most difficult destinations (more manageable for visualization)
+        top_destinations = self.destination_analysis.head(15)
         
-        # Chart 1: Average Difficulty Score by Destination
+        # Chart 1: Most Difficult Destinations (Question 1)
         fig, axes = plt.subplots(2, 2, figsize=(20, 16))
-        fig.suptitle('Destination Difficulty Analysis', fontsize=16, fontweight='bold')
+        fig.suptitle('Post-Analysis: Destination Difficulty & Operational Insights', fontsize=18, fontweight='bold', y=0.95)
         
-        # Average difficulty score
-        axes[0,0].barh(range(len(top_destinations)), top_destinations['avg_difficulty_score'])
+        # Question 1: Which destinations consistently show more difficulty?
+        colors = plt.cm.RdYlBu_r(np.linspace(0, 1, len(top_destinations)))
+        bars = axes[0,0].barh(range(len(top_destinations)), top_destinations['avg_difficulty_score'], color=colors, alpha=0.8)
         axes[0,0].set_yticks(range(len(top_destinations)))
-        axes[0,0].set_yticklabels(top_destinations.index)
-        axes[0,0].set_xlabel('Average Difficulty Score')
-        axes[0,0].set_title('Top 20 Most Difficult Destinations')
+        axes[0,0].set_yticklabels(top_destinations.index, fontsize=10)
+        axes[0,0].set_xlabel('Average Difficulty Score', fontsize=12, fontweight='bold')
+        axes[0,0].set_title('Q1: Most Difficult Destinations', fontsize=14, fontweight='bold')
         axes[0,0].grid(True, alpha=0.3)
         
-        # Flight count vs difficulty
-        axes[0,1].scatter(top_destinations['flight_count'], top_destinations['avg_difficulty_score'], 
-                         s=100, alpha=0.7)
-        axes[0,1].set_xlabel('Number of Flights')
-        axes[0,1].set_ylabel('Average Difficulty Score')
-        axes[0,1].set_title('Flight Volume vs Difficulty')
+        # Add value labels on bars
+        for i, bar in enumerate(bars):
+            width = bar.get_width()
+            axes[0,0].text(width + width*0.01, bar.get_y() + bar.get_height()/2, 
+                          f'{width:.1f}', ha='left', va='center', fontsize=9, fontweight='bold')
+        
+        # Question 1 continued: Percentage of difficult flights by destination
+        colors2 = plt.cm.viridis(np.linspace(0, 1, len(top_destinations)))
+        bars2 = axes[0,1].barh(range(len(top_destinations)), top_destinations['difficult_flight_pct'], color=colors2, alpha=0.8)
+        axes[0,1].set_yticks(range(len(top_destinations)))
+        axes[0,1].set_yticklabels(top_destinations.index, fontsize=10)
+        axes[0,1].set_xlabel('Percentage of Difficult Flights (%)', fontsize=12, fontweight='bold')
+        axes[0,1].set_title('Q1: Consistency of Difficulty by Destination', fontsize=14, fontweight='bold')
         axes[0,1].grid(True, alpha=0.3)
         
-        # Add destination labels
-        for i, dest in enumerate(top_destinations.index):
-            axes[0,1].annotate(dest, (top_destinations.loc[dest, 'flight_count'], 
-                                    top_destinations.loc[dest, 'avg_difficulty_score']))
+        # Add value labels
+        for i, bar in enumerate(bars2):
+            width = bar.get_width()
+            axes[0,1].text(width + width*0.01, bar.get_y() + bar.get_height()/2, 
+                          f'{width:.1f}%', ha='left', va='center', fontsize=9, fontweight='bold')
         
-        # Percentage of difficult flights
-        axes[1,0].barh(range(len(top_destinations)), top_destinations['difficult_flight_pct'])
-        axes[1,0].set_yticks(range(len(top_destinations)))
-        axes[1,0].set_yticklabels(top_destinations.index)
-        axes[1,0].set_xlabel('Percentage of Difficult Flights (%)')
-        axes[1,0].set_title('Percentage of Flights Classified as Difficult')
+        # Question 2: What are the common drivers? (Destination characteristics)
+        # Create a focused scatter plot showing delay vs difficulty
+        scatter = axes[1,0].scatter(top_destinations['avg_delay_minutes'], top_destinations['avg_difficulty_score'], 
+                                  c=top_destinations['avg_load_factor'], s=top_destinations['flight_count']*2, 
+                                  cmap='RdYlBu_r', alpha=0.7, edgecolors='black', linewidth=1)
+        axes[1,0].set_xlabel('Average Delay (minutes)', fontsize=12, fontweight='bold')
+        axes[1,0].set_ylabel('Average Difficulty Score', fontsize=12, fontweight='bold')
+        axes[1,0].set_title('Q2: Delay vs Difficulty (Size=Flights, Color=Load Factor)', fontsize=14, fontweight='bold')
         axes[1,0].grid(True, alpha=0.3)
         
-        # Difficulty consistency
-        axes[1,1].barh(range(len(top_destinations)), top_destinations['difficulty_consistency'])
-        axes[1,1].set_yticks(range(len(top_destinations)))
-        axes[1,1].set_yticklabels(top_destinations.index)
-        axes[1,1].set_xlabel('Difficulty Consistency Score')
-        axes[1,1].set_title('Consistency of Difficulty (Higher = More Consistent)')
+        # Add destination labels
+        for dest in top_destinations.index[:8]:  # Label top 8 to avoid clutter
+            axes[1,0].annotate(dest, (top_destinations.loc[dest, 'avg_delay_minutes'], 
+                                    top_destinations.loc[dest, 'avg_difficulty_score']),
+                             fontsize=8, ha='center', va='bottom')
+        
+        # Add colorbar
+        cbar = plt.colorbar(scatter, ax=axes[1,0])
+        cbar.set_label('Load Factor', fontsize=10, fontweight='bold')
+        
+        # Question 3: Operational efficiency insights - Ground time vs difficulty
+        scatter2 = axes[1,1].scatter(top_destinations['avg_ground_time_ratio'], top_destinations['avg_difficulty_score'],
+                                    c=top_destinations['avg_special_services'], s=top_destinations['flight_count']*2,
+                                    cmap='plasma', alpha=0.7, edgecolors='black', linewidth=1)
+        axes[1,1].set_xlabel('Average Ground Time Ratio', fontsize=12, fontweight='bold')
+        axes[1,1].set_ylabel('Average Difficulty Score', fontsize=12, fontweight='bold')
+        axes[1,1].set_title('Q3: Ground Time vs Difficulty (Size=Flights, Color=Special Services)', fontsize=14, fontweight='bold')
         axes[1,1].grid(True, alpha=0.3)
         
+        # Add destination labels
+        for dest in top_destinations.index[:8]:
+            axes[1,1].annotate(dest, (top_destinations.loc[dest, 'avg_ground_time_ratio'], 
+                                    top_destinations.loc[dest, 'avg_difficulty_score']),
+                             fontsize=8, ha='center', va='bottom')
+        
+        # Add colorbar
+        cbar2 = plt.colorbar(scatter2, ax=axes[1,1])
+        cbar2.set_label('Special Services', fontsize=10, fontweight='bold')
+        
         plt.tight_layout()
-        plt.savefig('destination_difficulty_analysis.png', dpi=300, bbox_inches='tight')
-        plt.show()
+        plt.savefig('destination_difficulty_analysis.png', dpi=300, bbox_inches='tight', facecolor='white')
+        plt.close()
         
-        # Chart 2: Destination characteristics heatmap
-        plt.figure(figsize=(15, 10))
+        # Chart 2: Destination characteristics heatmap (Question 2 & 3)
+        plt.figure(figsize=(16, 10))
         
-        # Prepare data for heatmap
-        heatmap_data = top_destinations[['avg_difficulty_score', 'avg_delay_minutes', 
-                                       'avg_load_factor', 'avg_special_services', 
-                                       'avg_ground_time_ratio', 'difficult_flight_pct']].T
+        # Prepare data for heatmap - focus on top 12 destinations for clarity
+        top_12_destinations = self.destination_analysis.head(12)
+        heatmap_data = top_12_destinations[['avg_difficulty_score', 'avg_delay_minutes', 
+                                           'avg_load_factor', 'avg_special_services', 
+                                           'avg_ground_time_ratio', 'difficult_flight_pct']].T
         
+        # Create a beautiful heatmap
         sns.heatmap(heatmap_data, annot=True, fmt='.2f', cmap='RdYlBu_r', 
-                   cbar_kws={'label': 'Normalized Values'})
-        plt.title('Destination Characteristics Heatmap (Top 20 Difficult Destinations)')
-        plt.xlabel('Destinations')
-        plt.ylabel('Characteristics')
-        plt.xticks(rotation=45)
+                   cbar_kws={'label': 'Normalized Values'}, 
+                   linewidths=0.5, linecolor='white',
+                   annot_kws={'fontsize': 10, 'fontweight': 'bold'})
+        
+        plt.title('Post-Analysis: Destination Characteristics Heatmap\n(Top 12 Difficult Destinations)', 
+                 fontsize=16, fontweight='bold', pad=20)
+        plt.xlabel('Destinations', fontsize=12, fontweight='bold')
+        plt.ylabel('Characteristics', fontsize=12, fontweight='bold')
+        plt.xticks(rotation=45, fontsize=10)
+        plt.yticks(rotation=0, fontsize=10)
         plt.tight_layout()
-        plt.savefig('destination_characteristics_heatmap.png', dpi=300, bbox_inches='tight')
-        plt.show()
+        plt.savefig('destination_characteristics_heatmap.png', dpi=300, bbox_inches='tight', facecolor='white')
+        plt.close()
         
     def create_driver_charts(self, sorted_drivers):
-        """Create charts for difficulty drivers"""
+        """Create charts for difficulty drivers - focused on core questions"""
         print("\nCreating difficulty driver charts...")
         
         # Extract data for plotting
@@ -223,48 +262,68 @@ class OperationalInsightsAnalyzer:
         difficult_means = [driver[1]['difficult_mean'] for driver in sorted_drivers]
         easy_means = [driver[1]['easy_mean'] for driver in sorted_drivers]
         
-        # Chart 1: Driver Impact Analysis
+        # Chart: Driver Impact Analysis (Question 2)
         fig, axes = plt.subplots(2, 2, figsize=(20, 16))
-        fig.suptitle('Difficulty Driver Analysis', fontsize=16, fontweight='bold')
+        fig.suptitle('Post-Analysis: Difficulty Drivers & Operational Insights', fontsize=18, fontweight='bold', y=0.95)
         
-        # Impact comparison
-        x_pos = np.arange(len(drivers))
-        axes[0,0].barh(x_pos, impacts, color='red', alpha=0.7)
-        axes[0,0].set_yticks(x_pos)
-        axes[0,0].set_yticklabels([d.replace('_', ' ').title() for d in drivers])
-        axes[0,0].set_xlabel('Impact (Difficult - Easy)')
-        axes[0,0].set_title('Driver Impact on Difficulty')
+        # Question 2: What are the common drivers for difficult flights?
+        colors = plt.cm.RdYlBu_r(np.linspace(0, 1, len(drivers)))
+        bars = axes[0,0].barh(range(len(drivers)), impacts, color=colors, alpha=0.8)
+        axes[0,0].set_yticks(range(len(drivers)))
+        axes[0,0].set_yticklabels([d.replace('_', ' ').title() for d in drivers], fontsize=10)
+        axes[0,0].set_xlabel('Impact (Difficult - Easy)', fontsize=12, fontweight='bold')
+        axes[0,0].set_title('Q2: Driver Impact on Flight Difficulty', fontsize=14, fontweight='bold')
         axes[0,0].grid(True, alpha=0.3)
         
-        # Difficult vs Easy comparison
+        # Add value labels
+        for i, bar in enumerate(bars):
+            width = bar.get_width()
+            axes[0,0].text(width + width*0.01, bar.get_y() + bar.get_height()/2, 
+                          f'{width:.3f}', ha='left', va='center', fontsize=9, fontweight='bold')
+        
+        # Question 2 continued: Difficult vs Easy comparison
         width = 0.35
-        axes[0,1].barh(x_pos - width/2, difficult_means, width, label='Difficult Flights', alpha=0.7)
-        axes[0,1].barh(x_pos + width/2, easy_means, width, label='Easy Flights', alpha=0.7)
+        x_pos = np.arange(len(drivers))
+        bars1 = axes[0,1].barh(x_pos - width/2, difficult_means, width, label='Difficult Flights', 
+                               color='#E53E3E', alpha=0.8)
+        bars2 = axes[0,1].barh(x_pos + width/2, easy_means, width, label='Easy Flights', 
+                               color='#68D391', alpha=0.8)
         axes[0,1].set_yticks(x_pos)
-        axes[0,1].set_yticklabels([d.replace('_', ' ').title() for d in drivers])
-        axes[0,1].set_xlabel('Average Value')
-        axes[0,1].set_title('Driver Values: Difficult vs Easy Flights')
-        axes[0,1].legend()
+        axes[0,1].set_yticklabels([d.replace('_', ' ').title() for d in drivers], fontsize=10)
+        axes[0,1].set_xlabel('Average Value', fontsize=12, fontweight='bold')
+        axes[0,1].set_title('Q2: Driver Values Comparison', fontsize=14, fontweight='bold')
+        axes[0,1].legend(fontsize=10)
         axes[0,1].grid(True, alpha=0.3)
         
-        # Top 5 drivers pie chart
+        # Question 3: What specific actions would you recommend? (Top drivers pie chart)
         # Filter out NaN values and ensure we have valid data
         valid_impacts = []
         valid_drivers = []
-        for i, impact in enumerate(impacts[:5]):
+        for i, impact in enumerate(impacts[:6]):  # Top 6 drivers
             if not np.isnan(impact) and not np.isinf(impact):
                 valid_impacts.append(abs(impact))
                 valid_drivers.append(drivers[i].replace('_', ' ').title())
         
-        if valid_impacts:  # Only create pie chart if we have valid data
-            axes[1,0].pie(valid_impacts, labels=valid_drivers, autopct='%1.1f%%', startangle=90)
-            axes[1,0].set_title('Top Difficulty Drivers (by Absolute Impact)')
+        if valid_impacts:
+            colors_pie = plt.cm.Set3(np.linspace(0, 1, len(valid_impacts)))
+            wedges, texts, autotexts = axes[1,0].pie(valid_impacts, labels=valid_drivers, colors=colors_pie, 
+                                                   autopct='%1.1f%%', startangle=90)
+            axes[1,0].set_title('Q3: Priority Drivers for Action (by Impact)', fontsize=14, fontweight='bold')
+            
+            # Enhance text appearance
+            for text in texts:
+                text.set_fontsize(9)
+                text.set_fontweight('bold')
+            for autotext in autotexts:
+                autotext.set_color('white')
+                autotext.set_fontsize(10)
+                autotext.set_fontweight('bold')
         else:
             axes[1,0].text(0.5, 0.5, 'No valid driver data available', 
-                          ha='center', va='center', transform=axes[1,0].transAxes)
-            axes[1,0].set_title('Driver Impact Data')
+                          ha='center', va='center', transform=axes[1,0].transAxes, fontsize=12)
+            axes[1,0].set_title('Q3: Priority Drivers for Action', fontsize=14, fontweight='bold')
         
-        # Driver correlation with difficulty score
+        # Question 3 continued: Driver correlation with difficulty score
         correlations = []
         for driver in drivers:
             if driver in self.flight_data.columns:
@@ -273,16 +332,23 @@ class OperationalInsightsAnalyzer:
             else:
                 correlations.append(0)
         
-        axes[1,1].barh(x_pos, correlations, color='blue', alpha=0.7)
+        colors_corr = ['#E53E3E' if c > 0 else '#68D391' for c in correlations]
+        bars_corr = axes[1,1].barh(x_pos, correlations, color=colors_corr, alpha=0.8)
         axes[1,1].set_yticks(x_pos)
-        axes[1,1].set_yticklabels([d.replace('_', ' ').title() for d in drivers])
-        axes[1,1].set_xlabel('Correlation with Difficulty Score')
-        axes[1,1].set_title('Driver Correlation with Overall Difficulty')
+        axes[1,1].set_yticklabels([d.replace('_', ' ').title() for d in drivers], fontsize=10)
+        axes[1,1].set_xlabel('Correlation with Difficulty Score', fontsize=12, fontweight='bold')
+        axes[1,1].set_title('Q3: Driver Correlation with Overall Difficulty', fontsize=14, fontweight='bold')
         axes[1,1].grid(True, alpha=0.3)
         
+        # Add correlation value labels
+        for i, bar in enumerate(bars_corr):
+            width = bar.get_width()
+            axes[1,1].text(width + width*0.01, bar.get_y() + bar.get_height()/2, 
+                          f'{width:.3f}', ha='left', va='center', fontsize=9, fontweight='bold')
+        
         plt.tight_layout()
-        plt.savefig('difficulty_driver_analysis.png', dpi=300, bbox_inches='tight')
-        plt.show()
+        plt.savefig('difficulty_driver_analysis.png', dpi=300, bbox_inches='tight', facecolor='white')
+        plt.close()
         
     def generate_operational_recommendations(self, sorted_drivers):
         """Generate operational recommendations based on analysis"""

@@ -1,0 +1,62 @@
+================================================================================
+UNITED AIRLINES FLIGHT DIFFICULTY SCORE - EDA RESULTS
+================================================================================
+Analysis Date: 2025-10-05 17:54:59
+Team: The Airbenders
+Members: Akshit Sahu (2K22/EC/027) & Atharva Jakhetiya (2K22/EC/063)
+
+DATASET SUMMARY
+--------------------------------------------------
+Total Flights Analyzed: 8,099
+Total PNR Records: 687,878
+Total Bag Records: 687,245
+Total Special Service Requests: 51,698
+Total Airports: 5,612
+
+QUESTION 1: DELAY ANALYSIS
+--------------------------------------------------
+Average departure delay: 21.2 minutes
+Median departure delay: 0.0 minutes
+Flights departing late (>15 min): 26.7%
+Flights departing early (<=15 min): 73.3%
+
+QUESTION 2: GROUND TIME ANALYSIS
+--------------------------------------------------
+Flights with tight ground time (<20% buffer): 16.1%
+Flights below minimum turn time: 7.8%
+Average ground time buffer: 135.7 minutes
+Average ground time ratio: 3.96
+Median ground time ratio: 1.70
+
+QUESTION 3: BAGGAGE ANALYSIS
+--------------------------------------------------
+Average transfer bag ratio: 0.601
+Average checked bag ratio: 0.399
+Average bags per flight: 78.8
+Total transfer bags: 397,124
+Total checked bags (Origin): 290,121
+
+QUESTION 4: PASSENGER LOAD ANALYSIS
+--------------------------------------------------
+Average load factor: 1.024
+High load flights (>80%): 88.1%
+Load factor vs delay correlation: -0.150
+Average children ratio: 0.005
+Average basic economy ratio: 0.080
+Average stroller ratio: 0.007
+Total passengers: 1,040,553
+
+QUESTION 5: SPECIAL SERVICES ANALYSIS
+--------------------------------------------------
+High special service flights (3+): 99.9%
+Average special services per flight: 48.75
+
+Top 5 Special Service Request Types:
+1. Airport Wheelchair: 45,738 requests
+2. Manual Wheelchair: 3,641 requests
+3. Unaccompanied Minor: 1,706 requests
+4. Electric Wheelchair: 613 requests
+
+================================================================================
+END OF EDA RESULTS
+================================================================================
